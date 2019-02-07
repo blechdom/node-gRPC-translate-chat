@@ -1,0 +1,76 @@
+
+syntax = "proto3";
+
+package translate_chat;
+
+service TranslateChat {
+
+  rpc JoinChat (JoinChatRequest) returns (stream JoinChatResponse);
+
+  rpc TranscribeAudioStream (AudioStreamRequest) returns (stream AudioStreamResponse);
+
+  rpc StopAudioStream (StopStreamRequest) returns (StopStreamResponse);
+
+  rpc SendMessage (SendMessageRequest) returns (SendMessageResponse);
+
+  rpc LeaveChat (LeaveChatRequest) returns (LeaveChatResponse);
+
+}
+
+message SendMessageRequest {
+  string message = 1;
+  string senderid = 2;
+  string sendername = 3;
+}
+
+message SendMessageResponse {
+  string status = 1;
+}
+
+message JoinChatRequest {
+  string username = 1;
+  string sttlanguagecode = 2;
+  string translatelanguagecode = 3;
+  string ttslanguagecode = 4;
+}
+
+message User {
+  string userid = 1;
+  string username = 2;
+}
+
+message JoinChatResponse {
+  string receiverid = 1;
+  string senderid = 2;
+  string sendername = 3;
+  string message = 4;
+  repeated User users = 5;
+  string messagetype = 6;
+}
+
+message AudioStreamRequest {
+  bool start = 1;
+}
+
+message AudioStreamResponse {
+  string transcript = 1;
+  bool isfinal = 2;
+  string isstatus = 3;
+}
+
+message StopStreamRequest {
+  bool stop = 1;
+}
+
+message StopStreamResponse {
+  string message = 1;
+}
+
+message LeaveChatRequest {
+  string senderid = 1;
+  string username = 2;
+}
+
+message LeaveChatResponse {
+  string status = 1;
+}
