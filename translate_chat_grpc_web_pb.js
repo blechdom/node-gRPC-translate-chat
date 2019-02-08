@@ -75,6 +75,62 @@ proto.translate_chat.TranslateChatPromiseClient =
 /**
  * @const
  * @type {!grpc.web.AbstractClientBase.MethodInfo<
+ *   !proto.translate_chat.VoiceListRequest,
+ *   !proto.translate_chat.VoiceListResponse>}
+ */
+const methodInfo_TranslateChat_GetVoiceList = new grpc.web.AbstractClientBase.MethodInfo(
+  proto.translate_chat.VoiceListResponse,
+  /** @param {!proto.translate_chat.VoiceListRequest} request */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.translate_chat.VoiceListResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.translate_chat.VoiceListRequest} request The
+ *     request proto
+ * @param {!Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.Error, ?proto.translate_chat.VoiceListResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.translate_chat.VoiceListResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.translate_chat.TranslateChatClient.prototype.getVoiceList =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/translate_chat.TranslateChat/GetVoiceList',
+      request,
+      metadata,
+      methodInfo_TranslateChat_GetVoiceList,
+      callback);
+};
+
+
+/**
+ * @param {!proto.translate_chat.VoiceListRequest} request The
+ *     request proto
+ * @param {!Object<string, string>} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.translate_chat.VoiceListResponse>}
+ *     The XHR Node Readable Stream
+ */
+proto.translate_chat.TranslateChatPromiseClient.prototype.getVoiceList =
+    function(request, metadata) {
+  return new Promise((resolve, reject) => {
+    this.delegateClient_.getVoiceList(
+      request, metadata, (error, response) => {
+        error ? reject(error) : resolve(response);
+      });
+  });
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.AbstractClientBase.MethodInfo<
  *   !proto.translate_chat.JoinChatRequest,
  *   !proto.translate_chat.JoinChatResponse>}
  */

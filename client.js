@@ -8,16 +8,16 @@ window.onload = function(){
   var joinDiv = document.getElementById('join-div');
   var chatDiv = document.getElementById('chat-div');
   var usernameList = document.getElementById('username-list');
-  var sttLanguageCode = document.getElementById('STTLanguageCodeSelect');
-  var translateLanguageCode = document.getElementById('translateLanguageCodeSelect');
-  var ttsLanguageCode = document.getElementById('TTSLanguageCodeSelect');
   var startStreamingButton = document.getElementById('start-streaming');
   var microphoneIcon = document.getElementById('microphone-icon');
+  var voiceListSelect = document.getElementById("voice-list-select-div");
+  var languageName = '';
 
   var socket = io("http://localhost:8082");
 
   chatDiv.style.visibility = "hidden";
   joinDiv.style.visibility = "visible";
+
   var receiverID = '';
   var usernames = [];
   var myUsername = '';
@@ -33,12 +33,41 @@ window.onload = function(){
           AudioStreamRequest,
           AudioStreamResponse,
           StopStreamRequest,
-          StopStreamResponse
+          StopStreamResponse,
+          VoiceListRequest,
+          VoiceListResponse
         } = require('./translate_chat_pb.js');
 
   const {TranslateChatClient} = require('./translate_chat_grpc_web_pb.js');
 
   var client = new TranslateChatClient('http://' + window.location.hostname + ':8080', null, null);
+
+  var voiceListRequest = new VoiceListRequest();
+  voiceListRequest.setLoaded(true);
+
+  client.getVoiceList(voiceListRequest, {}, (err, response) => {
+    var voicelist = JSON.parse(response.getVoicelist());
+    var voiceListOptions = '';
+
+    for (var i=0; i<voicelist.length; i++) {
+
+      var voice = voicelist[i];
+
+      languageName = voice.languageCodes;
+
+      languageName = convertLanguageCodes(voice.languageCodes[0]);
+
+      var selected = '';
+      if (voice.name=="en-US-Wavenet-C") {
+        selected = ' selected';
+      }
+
+      voiceListOptions += '<option value=' + voice.name + selected + '>' + languageName + ': ' + voice.name + ' (' + voice.ssmlGender + ')</option>';
+
+    }
+    voiceListSelect.innerHTML = '<select class="shadow-sm form-control" id="LanguageVoiceSelect">' + voiceListOptions + '</select>';
+  });
+
 
   usernameInput.addEventListener("keyup", function(event) {
     event.preventDefault();
@@ -50,18 +79,20 @@ window.onload = function(){
   joinButton.onclick = function(){
 
     myUsername = usernameInput.value;
-    var sttLang = sttLanguageCode.value;
-    var translateLang = translateLanguageCode.value;
-    var ttsLang = ttsLanguageCode.value;
+    var languageVoiceSelect = document.getElementById('LanguageVoiceSelect');
 
-    if(myUsername&&sttLang&&translateLang&&ttsLang){
+    var translateLang = languageVoiceSelect.value;
+    var myLanguageName = convertLanguageCodes(translateLang.substring(0, 5));
+
+
+    if(myUsername&&translateLang){
 
       var joinChatRequest = new JoinChatRequest();
 
       joinChatRequest.setUsername(myUsername);
-      joinChatRequest.setSttlanguagecode(sttLang);
       joinChatRequest.setTranslatelanguagecode(translateLang);
-      joinChatRequest.setTtslanguagecode(ttsLang);
+      joinChatRequest.setLanguagename(myLanguageName);
+
 
       var chatStream = client.joinChat(joinChatRequest, {});
 
@@ -101,7 +132,7 @@ window.onload = function(){
           if(senderID===user.getUserid()){
             	activeChatDiv = '<div class="chat_list active_chat">';
           }
-          usernameList.innerHTML += activeChatDiv + '<div class="chat_people"><div class="chat_ib"><h5>' + user.getUsername() + '</h5></div></div></div>';
+          usernameList.innerHTML += activeChatDiv + '<div class="chat_people"><div class="chat_ib"><h5>' + user.getUsername() + '</h5><p>' + user.getLanguagename() + '</div></div></div>';
         }
       });
     }
@@ -267,6 +298,7 @@ window.onload = function(){
       }
       return result.buffer;
   }
+
   window.addEventListener('beforeunload', function(event) {
     if (streamStreaming) {
       stopStreaming();
@@ -279,3 +311,72 @@ window.onload = function(){
     });
   });
 };
+
+function convertLanguageCodes(languageCode) {
+  var languageName;
+  switch (languageCode) {
+    case 'da-DK':
+      languageName = "Danish";
+      break;
+    case 'de-DE':
+      languageName = "German";
+      break;
+    case 'en-AU':
+      languageName = "English (Australia)"
+      break;
+    case 'en-GB':
+      languageName = "English (United Kingdom)"
+      break;
+    case 'en-US':
+      languageName = "English (United States)";
+      break;
+    case 'es-ES':
+      languageName = "Spanish";
+      break;
+    case 'fr-CA':
+      languageName = "French (Canada)";
+      break;
+    case 'fr-FR':
+      languageName = "French";
+      break;
+    case 'it-IT':
+      languageName = "Italian"
+      break;
+    case 'ja-JP':
+      languageName = "Japanese"
+      break;
+    case 'ko-KR':
+      languageName = "Korean";
+      break;
+    case 'nl-NL':
+      languageName = "Dutch"
+      break;
+    case 'pl-PL':
+      languageName = "Polish";
+      break;
+    case 'pt-BR':
+      languageName = "Portugese (Brazil)";
+      break;
+    case 'pt-PT':
+      languageName = "Portugese"
+      break;
+    case 'ru-RU':
+      languageName = "Russian";
+      break;
+    case 'sk-SK':
+      languageName = "Slovak (Slovakia)";
+      break;
+    case 'sv-SE':
+      languageName = "Swedish";
+      break;
+    case 'tr-TR':
+      languageName = "Turkish"
+      break;
+    case 'uk-UA':
+      languageName = "Ukrainian (Ukraine)"
+      break;
+    default:
+      languageName = languageCode;
+  }
+  return languageName;
+}

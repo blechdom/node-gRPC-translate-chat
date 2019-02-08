@@ -37,24 +37,42 @@ const speech = require('@google-cloud/speech');
 const {Translate} = require('@google-cloud/translate');
 const client = new speech.SpeechClient();
 const translate = new Translate();
+var voiceList = {};
+
+
+const textToSpeech = require('@google-cloud/text-to-speech');
+
+const ttsClient = new textToSpeech.TextToSpeechClient();
+
+async function doGetVoiceList(call, callback) {
+  const [result] = await ttsClient.listVoices({});
+  voiceList = result.voices;
+  voiceList.sort(function(a, b) {
+    var textA = a.name.toUpperCase();
+    var textB = b.name.toUpperCase();
+    return (textA < textB) ? -1 : (textA > textB) ? 1 : 0;
+  });
+  callback(null, {voicelist: JSON.stringify(voiceList)});
+
+}
 
 async function doJoinChat(call) {
   var username = call.request.username;
   var requestID = call.metadata._internal_repr["x-request-id"];
+  var languageName = call.request.languagename;
+
+
   user_array.push({
     userid: requestID[0],
-    username: username
+    username: username,
+    languagename: languageName
   });
 
   console.log("username_array " + JSON.stringify(user_array));
 
-  sttLanguageCode = call.request.sttlanguagecode;
-  translateLanguageCode = call.request.translatelanguagecode;
-  ttsLanguageCode = call.request.ttslanguagecode;
-
-
   var joinMessage = {
     message: username + " joined the chat",
+    messageLangCode: 'en',
     senderID: requestID[0],
     senderName: username,
     messageType: "update"
@@ -65,13 +83,18 @@ async function doJoinChat(call) {
   console.log("call array length: " + user_array.length);
 
   messageEmitter.on('chatMessage', function(chatMessage) {
+
     //translate chatMessage Here
     async function runTranslation() {
-      const target = translateLanguageCode;
+      ttsLanguageCode = call.request.translatelanguagecode;
+      translateLanguageCode = ttsLanguageCode.substring(0, 2);
+      sttLanguageCode = ttsLanguageCode.substring(0, 5);
+      console.log('runningTranslation to: ' + translateLanguageCode);
+      var target = translateLanguageCode;
       const text = chatMessage.message;
       let [translations] = await translate.translate(text, target);
       translations = Array.isArray(translations) ? translations : [translations];
-      console.log('Translations:');
+      console.log("call: " + JSON.stringify(call, null, 4));
       translations.forEach((translation, i) => {
         call.write({
           receiverid: requestID[0],
@@ -202,6 +225,7 @@ function doLeaveChat(call, callback) {
 function getServer() {
   var server = new grpc.Server();
   server.addService(translate_chat.TranslateChat.service, {
+    getVoiceList: doGetVoiceList,
     joinChat: doJoinChat,
     sendMessage: doSendMessage,
     leaveChat: doLeaveChat,

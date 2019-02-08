@@ -5,6 +5,8 @@ package translate_chat;
 
 service TranslateChat {
 
+  rpc GetVoiceList (VoiceListRequest) returns (VoiceListResponse);
+
   rpc JoinChat (JoinChatRequest) returns (stream JoinChatResponse);
 
   rpc TranscribeAudioStream (AudioStreamRequest) returns (stream AudioStreamResponse);
@@ -15,6 +17,14 @@ service TranslateChat {
 
   rpc LeaveChat (LeaveChatRequest) returns (LeaveChatResponse);
 
+}
+
+message VoiceListRequest {
+  bool loaded = 1;
+}
+
+message VoiceListResponse {
+  string voicelist = 1;
 }
 
 message SendMessageRequest {
@@ -29,14 +39,14 @@ message SendMessageResponse {
 
 message JoinChatRequest {
   string username = 1;
-  string sttlanguagecode = 2;
-  string translatelanguagecode = 3;
-  string ttslanguagecode = 4;
+  string translatelanguagecode = 2;
+  string languagename = 3;
 }
 
 message User {
   string userid = 1;
   string username = 2;
+  string languagename = 3;
 }
 
 message JoinChatResponse {
