@@ -195,9 +195,12 @@ window.onload = function(){
     request.setStart(true);
 
     var stream = client.transcribeAudioStream(request, {});
-
+    messageInput.value = "";
+    concatText = "";
+    newText = "";
     stream.on('data', (response) => {
       newText = response.getTranscript();
+      messageInput.value = concatText + newText;
       console.log("response: " + newText);
       if (response.getIsfinal()){
         concatText += " " + newText;
@@ -205,7 +208,7 @@ window.onload = function(){
         console.log("is final, so concat: " + concatText);
       }
       console.log("this is what it should say: " + concatText + newText);
-      messageInput.value = concatText + newText;
+
       newText = '';
     });
 
@@ -240,8 +243,6 @@ window.onload = function(){
     microphoneIcon.setAttribute("class", "icon-flash");
     microphoneIcon.style.color = "LimeGreen";
     messageInput.innerHTML = "";
-    //finalResult.innerHTML = "";
-    //statusMessages.innerHTML = "Listening...";
   	initRecording();
   }
 
