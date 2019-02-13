@@ -37,14 +37,13 @@ var audioStreamCall = null;
 
 const speech = require('@google-cloud/speech');
 const {Translate} = require('@google-cloud/translate');
-const client = new speech.SpeechClient();
-const translate = new Translate();
-var voiceList = {};
-
-
 const textToSpeech = require('@google-cloud/text-to-speech');
 
+const client = new speech.SpeechClient();
+const translate = new Translate();
 const ttsClient = new textToSpeech.TextToSpeechClient();
+
+var voiceList = {};
 
 async function doGetVoiceList(call, callback) {
   const [result] = await ttsClient.listVoices({});
@@ -63,7 +62,6 @@ async function doJoinChat(call) {
   var requestID = call.metadata._internal_repr["x-request-id"];
   var languageName = call.request.languagename;
 
-
   user_array.push({
     userid: requestID[0],
     username: username,
@@ -81,15 +79,16 @@ async function doJoinChat(call) {
 
   console.log(username + " joined the chatroom with ID: " + requestID[0]);
 
-  console.log("call array length: " + user_array.length);
+  console.log("number joined: " + user_array.length);
 
   messageEmitter.on('chatMessage', function(chatMessage) {
 
     //translate chatMessage Here
     async function runTranslation() {
-      ttsLanguageCode = call.request.translatelanguagecode;
-      translateLanguageCode = ttsLanguageCode.substring(0, 2);
-      sttLanguageCode = ttsLanguageCode.substring(0, 5);
+      ttsLanguageCode = call.request.translatelanguagecode; //en-EN-standard-B
+      translateLanguageCode = ttsLanguageCode.substring(0, 2); //en
+      sttLanguageCode = ttsLanguageCode.substring(0, 5); //en-US
+
       console.log('translating into: ' + ttsLanguageCode);
       var request = {
         // Select the language and SSML Voice Gender (optional)
@@ -144,16 +143,15 @@ SocketServer.on("connection", function(socket) {
 
 function doTranscribeAudioStream(call) {
   audioStreamCall = call;
-  startStreaming();
+  startStreaming(call.request.sttlanguagecode);
 }
 
-function startStreaming() {
-
+function startStreaming(sttLanguage) {
   var request = {
       config: {
           encoding: 'LINEAR16',
           sampleRateHertz: 16000,
-          languageCode: sttLanguageCode,
+          languageCode: sttLanguage,
       },
       interimResults: true
   };
@@ -234,19 +232,8 @@ function doPlayAudioFile(call) {
   });
 
   readStream.on('data', chunk => {
-    //packages++;
-    //var head = new Buffer("FILE");
-    //var sizeHex = chunk.length.toString(16);
-    //while(sizeHex.length < 4){
-      //sizeHex = "0" + sizeHex;
-    //}
-    //var size = new Buffer(sizeHex);
-    //console.log("size", chunk.length, "hex", sizeHex);
-    //var delimiter = new Buffer("@");
-    //var pack = Buffer.concat([head, size, chunk, delimiter]);
-    //totalBytes += pack.length;
-  //  client.write(pack);
-    console.log("chunk: " + chunk);
+
+    //console.log("chunk: " + chunk);
       call.write({
         audiodata: chunk
       });
@@ -259,30 +246,7 @@ function doPlayAudioFile(call) {
   });
 
 }
-/*
-const fileToBuffer = (filename, cb) => {
-    let readStream = fs.createReadStream(filename);
-    let chunks = [];
 
-    // Handle any errors while reading
-    readStream.on('error', err => {
-        // handle error
-
-        // File could not be read
-        return cb(err);
-    });
-
-    // Listen for data
-    readStream.on('data', chunk => {
-        chunks.push(chunk);
-    });
-
-    // File is done being read
-    readStream.on('close', () => {
-        // Create a buffer of the image from the stream
-        return cb(null, Buffer.concat(chunks));
-    });
-}*/
 function doLeaveChat(call, callback) {
   var senderID = call.request.senderid;
   var username = call.request.username;

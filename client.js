@@ -15,6 +15,7 @@ window.onload = function(){
   var joinBool = true;
   var audioObject = {};
   var lotsOfListeners = {};
+  var mySTTLang = '';
 
   var socket = io("http://localhost:8082");
 
@@ -24,7 +25,7 @@ window.onload = function(){
   var receiverID = '';
   var usernames = [];
   var myUsername = '';
-  var langCode = "en-US";
+  //var langCode = "en-US";
   var recordingStatus = false;
   var AudioContext; // = window.AudioContext || window.webkitAudioContext;
   var context;
@@ -83,8 +84,8 @@ window.onload = function(){
     var languageVoiceSelect = document.getElementById('LanguageVoiceSelect');
 
     var translateLang = languageVoiceSelect.value;
+    mySTTLang = translateLang.substring(0, 5);
     var myLanguageName = convertLanguageCodes(translateLang.substring(0, 5));
-
 
     if(myUsername&&translateLang){
 
@@ -106,12 +107,11 @@ window.onload = function(){
         receiverID = response.getReceiverid();
         senderID = response.getSenderid();
         var senderName = response.getSendername();
-        console.log("sender name: " + senderName);
         var messageType = response.getMessagetype();
         var newMessage = response.getMessage();
         var newMessageID = response.getMessageid();
         var messageAudio = newMessageID + '_' + receiverID + '.mp3';
-        console.log("audio file is: " + messageAudio);
+
         usernames = response.getUsersList();
 
         var formattedMessage = "";
@@ -150,10 +150,9 @@ window.onload = function(){
 
   addEventListener("keyup", function(event) {
     if (event.keyCode === 13) {
-      console.log(JSON.stringify(event));
       if (joinBool) {
         joinButton.click();
-      }//if login do Thi
+      }
       else {
         messageSend.click();
       }
@@ -172,7 +171,6 @@ window.onload = function(){
       concatText = '';
       newText = '';
       messageInput.value = '';
-      console.log("RecordingStatus: " + recordingStatus);
       if (recordingStatus) { stopStreaming(); }
     }
     else {
@@ -180,7 +178,6 @@ window.onload = function(){
     }
   }
   startStreamingButton.onclick = function() {
-    console.log("starting streaming button");
     if(!recordingStatus){
       startStreaming();
     }
@@ -211,6 +208,7 @@ window.onload = function(){
     var request = new AudioStreamRequest();
 
     request.setStart(true);
+    request.setSttlanguagecode(mySTTLang);
 
     var stream = client.transcribeAudioStream(request, {});
     messageInput.value = "";
@@ -219,14 +217,9 @@ window.onload = function(){
     stream.on('data', (response) => {
       newText = response.getTranscript();
       messageInput.value = concatText + newText;
-      console.log("response: " + newText);
       if (response.getIsfinal()){
         concatText += " " + newText;
-
-        console.log("is final, so concat: " + concatText);
       }
-      console.log("this is what it should say: " + concatText + newText);
-
       newText = '';
     });
 
@@ -263,7 +256,6 @@ window.onload = function(){
   }
 
   function stopStreaming() {
-    console.log("stopping Stream");
   	streamStreaming = false;
     recordingStatus = false;
     microphoneIcon.removeAttribute("class", "icon-flash");
@@ -343,7 +335,6 @@ window.onload = function(){
 
     });
     playStream.on('status', function(status) {
-      console.log("stream code = " + JSON.stringify(status.code));
       if (status.code===0){
         playAudioBuffer(base64_mp3);
       }
@@ -382,7 +373,6 @@ window.onload = function(){
     request.setSenderid(receiverID);
     request.setUsername(myUsername);
     client.leaveChat(request, {}, (err, response) => {
-      console.log("Removed from Chat User List");
     });
   });
 };

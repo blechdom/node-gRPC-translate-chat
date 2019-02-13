@@ -1470,7 +1470,8 @@ proto.translate_chat.AudioStreamRequest.prototype.toObject = function(opt_includ
  */
 proto.translate_chat.AudioStreamRequest.toObject = function(includeInstance, msg) {
   var f, obj = {
-    start: jspb.Message.getFieldWithDefault(msg, 1, false)
+    start: jspb.Message.getFieldWithDefault(msg, 1, false),
+    sttlanguagecode: jspb.Message.getFieldWithDefault(msg, 2, "")
   };
 
   if (includeInstance) {
@@ -1511,6 +1512,10 @@ proto.translate_chat.AudioStreamRequest.deserializeBinaryFromReader = function(m
       var value = /** @type {boolean} */ (reader.readBool());
       msg.setStart(value);
       break;
+    case 2:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setSttlanguagecode(value);
+      break;
     default:
       reader.skipField();
       break;
@@ -1547,6 +1552,13 @@ proto.translate_chat.AudioStreamRequest.serializeBinaryToWriter = function(messa
       f
     );
   }
+  f = message.getSttlanguagecode();
+  if (f.length > 0) {
+    writer.writeString(
+      2,
+      f
+    );
+  }
 };
 
 
@@ -1564,6 +1576,21 @@ proto.translate_chat.AudioStreamRequest.prototype.getStart = function() {
 /** @param {boolean} value */
 proto.translate_chat.AudioStreamRequest.prototype.setStart = function(value) {
   jspb.Message.setProto3BooleanField(this, 1, value);
+};
+
+
+/**
+ * optional string sttlanguagecode = 2;
+ * @return {string}
+ */
+proto.translate_chat.AudioStreamRequest.prototype.getSttlanguagecode = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 2, ""));
+};
+
+
+/** @param {string} value */
+proto.translate_chat.AudioStreamRequest.prototype.setSttlanguagecode = function(value) {
+  jspb.Message.setProto3StringField(this, 2, value);
 };
 
 

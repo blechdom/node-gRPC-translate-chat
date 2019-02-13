@@ -64,6 +64,7 @@ message JoinChatResponse {
 
 message AudioStreamRequest {
   bool start = 1;
+  string sttlanguagecode = 2;
 }
 
 message AudioStreamResponse {
