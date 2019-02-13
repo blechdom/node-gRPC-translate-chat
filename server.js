@@ -11,6 +11,8 @@ const SocketServer = io.listen(8082);
 
 var grpc = require('grpc');
 var _ = require('lodash');
+var util = require('util');
+var fs = require('fs');
 var protoLoader = require('@grpc/proto-loader');
 var packageDefinition = protoLoader.loadSync(
     PROTO_PATH,
@@ -68,10 +70,9 @@ async function doJoinChat(call) {
     languagename: languageName
   });
 
-  console.log("username_array " + JSON.stringify(user_array));
-
   var joinMessage = {
     message: username + " joined the chat",
+    messageID: requestID[0],
     messageLangCode: 'en',
     senderID: requestID[0],
     senderName: username,
@@ -89,27 +90,46 @@ async function doJoinChat(call) {
       ttsLanguageCode = call.request.translatelanguagecode;
       translateLanguageCode = ttsLanguageCode.substring(0, 2);
       sttLanguageCode = ttsLanguageCode.substring(0, 5);
-      console.log('runningTranslation to: ' + translateLanguageCode);
+      console.log('translating into: ' + ttsLanguageCode);
+      var request = {
+        // Select the language and SSML Voice Gender (optional)
+        voice: {languageCode: ttsLanguageCode, ssmlGender: 'NEUTRAL'},
+        // Select the type of audio encoding
+        audioConfig: {audioEncoding: 'MP3'},
+      };
       var target = translateLanguageCode;
-      const text = chatMessage.message;
+      var text = chatMessage.message;
       let [translations] = await translate.translate(text, target);
       translations = Array.isArray(translations) ? translations : [translations];
-      console.log("call: " + JSON.stringify(call, null, 4));
+      var translation_concatenated = "";
       translations.forEach((translation, i) => {
+        translation_concatenated += translation + " ";
+      });
+      // Construct the request
+      request.input= {text: translation_concatenated};
+      console.log('tts config: ' + JSON.stringify(request));
+      async function tts(){
+        const [response] = await ttsClient.synthesizeSpeech(request);
+
+        const writeFile = util.promisify(fs.writeFile);
+        await writeFile('audio/' + chatMessage.messageID + '_' + requestID[0] + '.mp3', response.audioContent, 'binary');
+        console.log('Audio content written to file: ' + chatMessage.messageID + '_' + requestID[0] + '.mp3');
+
         call.write({
           receiverid: requestID[0],
           senderid: chatMessage.senderID,
           sendername: chatMessage.senderName,
-          message: translation,
+          message: translation_concatenated,
+          messageid: chatMessage.messageID,
           users: user_array,
           messagetype: chatMessage.messageType
         });
-        console.log(`${text[i]} => (${target}) ${translation}`);
-      });
+        console.log(`${target}) ${translation_concatenated}`);
+      }
+      tts();
     }
     runTranslation();
   });
-
   messageEmitter.emit('chatMessage', joinMessage);
 }
 
@@ -181,8 +201,10 @@ function doSendMessage(call, callback) {
   var newMessage = call.request.message;
   var senderID = call.request.senderid;
   var senderName = call.request.sendername;
+  var messageID = call.metadata._internal_repr["x-request-id"];
   var chatMessage = {
     message: newMessage,
+    messageID: messageID[0],
     senderID: senderID,
     senderName: senderName,
     messageType: "message"
@@ -196,6 +218,71 @@ function doSendMessage(call, callback) {
   callback(null, {status: "message-received"});
 }
 
+function doPlayAudioFile(call) {
+  console.log("playing audio file");
+  var filename = "audio/" + call.request.audiofilename;
+
+  let readStream = fs.createReadStream(filename);
+  let chunks = [];
+  var packages = 0;
+  totalBytes = 0;
+
+  readStream.on('error', err => {
+      // handle error
+      // File could not be read
+      throw err;
+  });
+
+  readStream.on('data', chunk => {
+    //packages++;
+    //var head = new Buffer("FILE");
+    //var sizeHex = chunk.length.toString(16);
+    //while(sizeHex.length < 4){
+      //sizeHex = "0" + sizeHex;
+    //}
+    //var size = new Buffer(sizeHex);
+    //console.log("size", chunk.length, "hex", sizeHex);
+    //var delimiter = new Buffer("@");
+    //var pack = Buffer.concat([head, size, chunk, delimiter]);
+    //totalBytes += pack.length;
+  //  client.write(pack);
+    console.log("chunk: " + chunk);
+      call.write({
+        audiodata: chunk
+      });
+  });
+  // File is done being read
+  readStream.on('close', () => {
+      call.end();
+      // Create a buffer of the image from the stream
+      console.log("file send complete");
+  });
+
+}
+/*
+const fileToBuffer = (filename, cb) => {
+    let readStream = fs.createReadStream(filename);
+    let chunks = [];
+
+    // Handle any errors while reading
+    readStream.on('error', err => {
+        // handle error
+
+        // File could not be read
+        return cb(err);
+    });
+
+    // Listen for data
+    readStream.on('data', chunk => {
+        chunks.push(chunk);
+    });
+
+    // File is done being read
+    readStream.on('close', () => {
+        // Create a buffer of the image from the stream
+        return cb(null, Buffer.concat(chunks));
+    });
+}*/
 function doLeaveChat(call, callback) {
   var senderID = call.request.senderid;
   var username = call.request.username;
@@ -209,6 +296,7 @@ function doLeaveChat(call, callback) {
   var leaveMessage = username + " has left the chat.";
   var chatMessage = {
     message: leaveMessage,
+    messageID: senderID,
     senderID: senderID,
     senderName: username,
     messageType: "update"
@@ -230,6 +318,7 @@ function getServer() {
     sendMessage: doSendMessage,
     leaveChat: doLeaveChat,
     transcribeAudioStream: doTranscribeAudioStream,
+    playAudioFile: doPlayAudioFile,
     stopAudioStream: doStopAudioStream
   });
   console.log("Chat Server Started");

@@ -17,6 +17,8 @@ goog.exportSymbol('proto.translate_chat.JoinChatRequest', null, global);
 goog.exportSymbol('proto.translate_chat.JoinChatResponse', null, global);
 goog.exportSymbol('proto.translate_chat.LeaveChatRequest', null, global);
 goog.exportSymbol('proto.translate_chat.LeaveChatResponse', null, global);
+goog.exportSymbol('proto.translate_chat.PlayAudioFileRequest', null, global);
+goog.exportSymbol('proto.translate_chat.PlayAudioFileResponse', null, global);
 goog.exportSymbol('proto.translate_chat.SendMessageRequest', null, global);
 goog.exportSymbol('proto.translate_chat.SendMessageResponse', null, global);
 goog.exportSymbol('proto.translate_chat.StopStreamRequest', null, global);
@@ -1063,7 +1065,7 @@ if (goog.DEBUG && !COMPILED) {
  * @private {!Array<number>}
  * @const
  */
-proto.translate_chat.JoinChatResponse.repeatedFields_ = [5];
+proto.translate_chat.JoinChatResponse.repeatedFields_ = [6];
 
 
 
@@ -1098,9 +1100,11 @@ proto.translate_chat.JoinChatResponse.toObject = function(includeInstance, msg) 
     senderid: jspb.Message.getFieldWithDefault(msg, 2, ""),
     sendername: jspb.Message.getFieldWithDefault(msg, 3, ""),
     message: jspb.Message.getFieldWithDefault(msg, 4, ""),
+    messageid: jspb.Message.getFieldWithDefault(msg, 5, ""),
     usersList: jspb.Message.toObjectList(msg.getUsersList(),
     proto.translate_chat.User.toObject, includeInstance),
-    messagetype: jspb.Message.getFieldWithDefault(msg, 6, "")
+    messagetype: jspb.Message.getFieldWithDefault(msg, 7, ""),
+    audio: msg.getAudio_asB64()
   };
 
   if (includeInstance) {
@@ -1154,13 +1158,21 @@ proto.translate_chat.JoinChatResponse.deserializeBinaryFromReader = function(msg
       msg.setMessage(value);
       break;
     case 5:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setMessageid(value);
+      break;
+    case 6:
       var value = new proto.translate_chat.User;
       reader.readMessage(value,proto.translate_chat.User.deserializeBinaryFromReader);
       msg.addUsers(value);
       break;
-    case 6:
+    case 7:
       var value = /** @type {string} */ (reader.readString());
       msg.setMessagetype(value);
+      break;
+    case 8:
+      var value = /** @type {!Uint8Array} */ (reader.readBytes());
+      msg.setAudio(value);
       break;
     default:
       reader.skipField();
@@ -1219,10 +1231,17 @@ proto.translate_chat.JoinChatResponse.serializeBinaryToWriter = function(message
       f
     );
   }
+  f = message.getMessageid();
+  if (f.length > 0) {
+    writer.writeString(
+      5,
+      f
+    );
+  }
   f = message.getUsersList();
   if (f.length > 0) {
     writer.writeRepeatedMessage(
-      5,
+      6,
       f,
       proto.translate_chat.User.serializeBinaryToWriter
     );
@@ -1230,7 +1249,14 @@ proto.translate_chat.JoinChatResponse.serializeBinaryToWriter = function(message
   f = message.getMessagetype();
   if (f.length > 0) {
     writer.writeString(
-      6,
+      7,
+      f
+    );
+  }
+  f = message.getAudio_asU8();
+  if (f.length > 0) {
+    writer.writeBytes(
+      8,
       f
     );
   }
@@ -1298,18 +1324,33 @@ proto.translate_chat.JoinChatResponse.prototype.setMessage = function(value) {
 
 
 /**
- * repeated User users = 5;
+ * optional string messageid = 5;
+ * @return {string}
+ */
+proto.translate_chat.JoinChatResponse.prototype.getMessageid = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 5, ""));
+};
+
+
+/** @param {string} value */
+proto.translate_chat.JoinChatResponse.prototype.setMessageid = function(value) {
+  jspb.Message.setProto3StringField(this, 5, value);
+};
+
+
+/**
+ * repeated User users = 6;
  * @return {!Array<!proto.translate_chat.User>}
  */
 proto.translate_chat.JoinChatResponse.prototype.getUsersList = function() {
   return /** @type{!Array<!proto.translate_chat.User>} */ (
-    jspb.Message.getRepeatedWrapperField(this, proto.translate_chat.User, 5));
+    jspb.Message.getRepeatedWrapperField(this, proto.translate_chat.User, 6));
 };
 
 
 /** @param {!Array<!proto.translate_chat.User>} value */
 proto.translate_chat.JoinChatResponse.prototype.setUsersList = function(value) {
-  jspb.Message.setRepeatedWrapperField(this, 5, value);
+  jspb.Message.setRepeatedWrapperField(this, 6, value);
 };
 
 
@@ -1319,7 +1360,7 @@ proto.translate_chat.JoinChatResponse.prototype.setUsersList = function(value) {
  * @return {!proto.translate_chat.User}
  */
 proto.translate_chat.JoinChatResponse.prototype.addUsers = function(opt_value, opt_index) {
-  return jspb.Message.addToRepeatedWrapperField(this, 5, opt_value, proto.translate_chat.User, opt_index);
+  return jspb.Message.addToRepeatedWrapperField(this, 6, opt_value, proto.translate_chat.User, opt_index);
 };
 
 
@@ -1329,17 +1370,56 @@ proto.translate_chat.JoinChatResponse.prototype.clearUsersList = function() {
 
 
 /**
- * optional string messagetype = 6;
+ * optional string messagetype = 7;
  * @return {string}
  */
 proto.translate_chat.JoinChatResponse.prototype.getMessagetype = function() {
-  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 6, ""));
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 7, ""));
 };
 
 
 /** @param {string} value */
 proto.translate_chat.JoinChatResponse.prototype.setMessagetype = function(value) {
-  jspb.Message.setProto3StringField(this, 6, value);
+  jspb.Message.setProto3StringField(this, 7, value);
+};
+
+
+/**
+ * optional bytes audio = 8;
+ * @return {string}
+ */
+proto.translate_chat.JoinChatResponse.prototype.getAudio = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 8, ""));
+};
+
+
+/**
+ * optional bytes audio = 8;
+ * This is a type-conversion wrapper around `getAudio()`
+ * @return {string}
+ */
+proto.translate_chat.JoinChatResponse.prototype.getAudio_asB64 = function() {
+  return /** @type {string} */ (jspb.Message.bytesAsB64(
+      this.getAudio()));
+};
+
+
+/**
+ * optional bytes audio = 8;
+ * Note that Uint8Array is not supported on all browsers.
+ * @see http://caniuse.com/Uint8Array
+ * This is a type-conversion wrapper around `getAudio()`
+ * @return {!Uint8Array}
+ */
+proto.translate_chat.JoinChatResponse.prototype.getAudio_asU8 = function() {
+  return /** @type {!Uint8Array} */ (jspb.Message.bytesAsU8(
+      this.getAudio()));
+};
+
+
+/** @param {!(string|Uint8Array)} value */
+proto.translate_chat.JoinChatResponse.prototype.setAudio = function(value) {
+  jspb.Message.setProto3BytesField(this, 8, value);
 };
 
 
@@ -1682,6 +1762,314 @@ proto.translate_chat.AudioStreamResponse.prototype.getIsstatus = function() {
 /** @param {string} value */
 proto.translate_chat.AudioStreamResponse.prototype.setIsstatus = function(value) {
   jspb.Message.setProto3StringField(this, 3, value);
+};
+
+
+
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.translate_chat.PlayAudioFileRequest = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+};
+goog.inherits(proto.translate_chat.PlayAudioFileRequest, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  proto.translate_chat.PlayAudioFileRequest.displayName = 'proto.translate_chat.PlayAudioFileRequest';
+}
+
+
+if (jspb.Message.GENERATE_TO_OBJECT) {
+/**
+ * Creates an object representation of this proto suitable for use in Soy templates.
+ * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
+ * For the list of reserved names please see:
+ *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
+ * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
+ *     for transitional soy proto support: http://goto/soy-param-migration
+ * @return {!Object}
+ */
+proto.translate_chat.PlayAudioFileRequest.prototype.toObject = function(opt_includeInstance) {
+  return proto.translate_chat.PlayAudioFileRequest.toObject(opt_includeInstance, this);
+};
+
+
+/**
+ * Static version of the {@see toObject} method.
+ * @param {boolean|undefined} includeInstance Whether to include the JSPB
+ *     instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
+ * @param {!proto.translate_chat.PlayAudioFileRequest} msg The msg instance to transform.
+ * @return {!Object}
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.translate_chat.PlayAudioFileRequest.toObject = function(includeInstance, msg) {
+  var f, obj = {
+    audiofilename: jspb.Message.getFieldWithDefault(msg, 1, "")
+  };
+
+  if (includeInstance) {
+    obj.$jspbMessageInstance = msg;
+  }
+  return obj;
+};
+}
+
+
+/**
+ * Deserializes binary data (in protobuf wire format).
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @return {!proto.translate_chat.PlayAudioFileRequest}
+ */
+proto.translate_chat.PlayAudioFileRequest.deserializeBinary = function(bytes) {
+  var reader = new jspb.BinaryReader(bytes);
+  var msg = new proto.translate_chat.PlayAudioFileRequest;
+  return proto.translate_chat.PlayAudioFileRequest.deserializeBinaryFromReader(msg, reader);
+};
+
+
+/**
+ * Deserializes binary data (in protobuf wire format) from the
+ * given reader into the given message object.
+ * @param {!proto.translate_chat.PlayAudioFileRequest} msg The message object to deserialize into.
+ * @param {!jspb.BinaryReader} reader The BinaryReader to use.
+ * @return {!proto.translate_chat.PlayAudioFileRequest}
+ */
+proto.translate_chat.PlayAudioFileRequest.deserializeBinaryFromReader = function(msg, reader) {
+  while (reader.nextField()) {
+    if (reader.isEndGroup()) {
+      break;
+    }
+    var field = reader.getFieldNumber();
+    switch (field) {
+    case 1:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setAudiofilename(value);
+      break;
+    default:
+      reader.skipField();
+      break;
+    }
+  }
+  return msg;
+};
+
+
+/**
+ * Serializes the message to binary data (in protobuf wire format).
+ * @return {!Uint8Array}
+ */
+proto.translate_chat.PlayAudioFileRequest.prototype.serializeBinary = function() {
+  var writer = new jspb.BinaryWriter();
+  proto.translate_chat.PlayAudioFileRequest.serializeBinaryToWriter(this, writer);
+  return writer.getResultBuffer();
+};
+
+
+/**
+ * Serializes the given message to binary data (in protobuf wire
+ * format), writing to the given BinaryWriter.
+ * @param {!proto.translate_chat.PlayAudioFileRequest} message
+ * @param {!jspb.BinaryWriter} writer
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.translate_chat.PlayAudioFileRequest.serializeBinaryToWriter = function(message, writer) {
+  var f = undefined;
+  f = message.getAudiofilename();
+  if (f.length > 0) {
+    writer.writeString(
+      1,
+      f
+    );
+  }
+};
+
+
+/**
+ * optional string audiofilename = 1;
+ * @return {string}
+ */
+proto.translate_chat.PlayAudioFileRequest.prototype.getAudiofilename = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 1, ""));
+};
+
+
+/** @param {string} value */
+proto.translate_chat.PlayAudioFileRequest.prototype.setAudiofilename = function(value) {
+  jspb.Message.setProto3StringField(this, 1, value);
+};
+
+
+
+/**
+ * Generated by JsPbCodeGenerator.
+ * @param {Array=} opt_data Optional initial data array, typically from a
+ * server response, or constructed directly in Javascript. The array is used
+ * in place and becomes part of the constructed object. It is not cloned.
+ * If no data is provided, the constructed object will be empty, but still
+ * valid.
+ * @extends {jspb.Message}
+ * @constructor
+ */
+proto.translate_chat.PlayAudioFileResponse = function(opt_data) {
+  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+};
+goog.inherits(proto.translate_chat.PlayAudioFileResponse, jspb.Message);
+if (goog.DEBUG && !COMPILED) {
+  proto.translate_chat.PlayAudioFileResponse.displayName = 'proto.translate_chat.PlayAudioFileResponse';
+}
+
+
+if (jspb.Message.GENERATE_TO_OBJECT) {
+/**
+ * Creates an object representation of this proto suitable for use in Soy templates.
+ * Field names that are reserved in JavaScript and will be renamed to pb_name.
+ * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
+ * For the list of reserved names please see:
+ *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
+ * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
+ *     for transitional soy proto support: http://goto/soy-param-migration
+ * @return {!Object}
+ */
+proto.translate_chat.PlayAudioFileResponse.prototype.toObject = function(opt_includeInstance) {
+  return proto.translate_chat.PlayAudioFileResponse.toObject(opt_includeInstance, this);
+};
+
+
+/**
+ * Static version of the {@see toObject} method.
+ * @param {boolean|undefined} includeInstance Whether to include the JSPB
+ *     instance for transitional soy proto support:
+ *     http://goto/soy-param-migration
+ * @param {!proto.translate_chat.PlayAudioFileResponse} msg The msg instance to transform.
+ * @return {!Object}
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.translate_chat.PlayAudioFileResponse.toObject = function(includeInstance, msg) {
+  var f, obj = {
+    audiodata: msg.getAudiodata_asB64()
+  };
+
+  if (includeInstance) {
+    obj.$jspbMessageInstance = msg;
+  }
+  return obj;
+};
+}
+
+
+/**
+ * Deserializes binary data (in protobuf wire format).
+ * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @return {!proto.translate_chat.PlayAudioFileResponse}
+ */
+proto.translate_chat.PlayAudioFileResponse.deserializeBinary = function(bytes) {
+  var reader = new jspb.BinaryReader(bytes);
+  var msg = new proto.translate_chat.PlayAudioFileResponse;
+  return proto.translate_chat.PlayAudioFileResponse.deserializeBinaryFromReader(msg, reader);
+};
+
+
+/**
+ * Deserializes binary data (in protobuf wire format) from the
+ * given reader into the given message object.
+ * @param {!proto.translate_chat.PlayAudioFileResponse} msg The message object to deserialize into.
+ * @param {!jspb.BinaryReader} reader The BinaryReader to use.
+ * @return {!proto.translate_chat.PlayAudioFileResponse}
+ */
+proto.translate_chat.PlayAudioFileResponse.deserializeBinaryFromReader = function(msg, reader) {
+  while (reader.nextField()) {
+    if (reader.isEndGroup()) {
+      break;
+    }
+    var field = reader.getFieldNumber();
+    switch (field) {
+    case 1:
+      var value = /** @type {!Uint8Array} */ (reader.readBytes());
+      msg.setAudiodata(value);
+      break;
+    default:
+      reader.skipField();
+      break;
+    }
+  }
+  return msg;
+};
+
+
+/**
+ * Serializes the message to binary data (in protobuf wire format).
+ * @return {!Uint8Array}
+ */
+proto.translate_chat.PlayAudioFileResponse.prototype.serializeBinary = function() {
+  var writer = new jspb.BinaryWriter();
+  proto.translate_chat.PlayAudioFileResponse.serializeBinaryToWriter(this, writer);
+  return writer.getResultBuffer();
+};
+
+
+/**
+ * Serializes the given message to binary data (in protobuf wire
+ * format), writing to the given BinaryWriter.
+ * @param {!proto.translate_chat.PlayAudioFileResponse} message
+ * @param {!jspb.BinaryWriter} writer
+ * @suppress {unusedLocalVariables} f is only used for nested messages
+ */
+proto.translate_chat.PlayAudioFileResponse.serializeBinaryToWriter = function(message, writer) {
+  var f = undefined;
+  f = message.getAudiodata_asU8();
+  if (f.length > 0) {
+    writer.writeBytes(
+      1,
+      f
+    );
+  }
+};
+
+
+/**
+ * optional bytes audiodata = 1;
+ * @return {string}
+ */
+proto.translate_chat.PlayAudioFileResponse.prototype.getAudiodata = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 1, ""));
+};
+
+
+/**
+ * optional bytes audiodata = 1;
+ * This is a type-conversion wrapper around `getAudiodata()`
+ * @return {string}
+ */
+proto.translate_chat.PlayAudioFileResponse.prototype.getAudiodata_asB64 = function() {
+  return /** @type {string} */ (jspb.Message.bytesAsB64(
+      this.getAudiodata()));
+};
+
+
+/**
+ * optional bytes audiodata = 1;
+ * Note that Uint8Array is not supported on all browsers.
+ * @see http://caniuse.com/Uint8Array
+ * This is a type-conversion wrapper around `getAudiodata()`
+ * @return {!Uint8Array}
+ */
+proto.translate_chat.PlayAudioFileResponse.prototype.getAudiodata_asU8 = function() {
+  return /** @type {!Uint8Array} */ (jspb.Message.bytesAsU8(
+      this.getAudiodata()));
+};
+
+
+/** @param {!(string|Uint8Array)} value */
+proto.translate_chat.PlayAudioFileResponse.prototype.setAudiodata = function(value) {
+  jspb.Message.setProto3BytesField(this, 1, value);
 };
 
 

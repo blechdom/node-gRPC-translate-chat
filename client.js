@@ -12,6 +12,9 @@ window.onload = function(){
   var microphoneIcon = document.getElementById('microphone-icon');
   var voiceListSelect = document.getElementById("voice-list-select-div");
   var languageName = '';
+  var joinBool = true;
+  var audioObject = {};
+  var lotsOfListeners = {};
 
   var socket = io("http://localhost:8082");
 
@@ -23,6 +26,8 @@ window.onload = function(){
   var myUsername = '';
   var langCode = "en-US";
   var recordingStatus = false;
+  var AudioContext; // = window.AudioContext || window.webkitAudioContext;
+  var context;
 
   const { JoinChatRequest,
           JoinChatResponse,
@@ -32,6 +37,8 @@ window.onload = function(){
           LeaveChatResponse,
           AudioStreamRequest,
           AudioStreamResponse,
+          PlayAudioFileRequest,
+          PlayAudioFileResponse,
           StopStreamRequest,
           StopStreamResponse,
           VoiceListRequest,
@@ -46,6 +53,7 @@ window.onload = function(){
   voiceListRequest.setLoaded(true);
 
   client.getVoiceList(voiceListRequest, {}, (err, response) => {
+
     var voicelist = JSON.parse(response.getVoicelist());
     var voiceListOptions = '';
 
@@ -68,16 +76,9 @@ window.onload = function(){
     voiceListSelect.innerHTML = '<select class="shadow-sm form-control" id="LanguageVoiceSelect">' + voiceListOptions + '</select>';
   });
 
-
-  usernameInput.addEventListener("keyup", function(event) {
-    event.preventDefault();
-    if (event.keyCode === 13) {
-      joinButton.click();
-    }
-  });
-
   joinButton.onclick = function(){
 
+    //context = new AudioContext();
     myUsername = usernameInput.value;
     var languageVoiceSelect = document.getElementById('LanguageVoiceSelect');
 
@@ -98,6 +99,7 @@ window.onload = function(){
 
       joinDiv.innerHTML = "";
       chatDiv.style.visibility = "visible";
+      joinBool = false;
 
       chatStream.on('data', (response) => {
 
@@ -107,6 +109,9 @@ window.onload = function(){
         console.log("sender name: " + senderName);
         var messageType = response.getMessagetype();
         var newMessage = response.getMessage();
+        var newMessageID = response.getMessageid();
+        var messageAudio = newMessageID + '_' + receiverID + '.mp3';
+        console.log("audio file is: " + messageAudio);
         usernames = response.getUsersList();
 
         var formattedMessage = "";
@@ -117,10 +122,11 @@ window.onload = function(){
           messageHistory.innerHTML = '<div class="update_chat danger rotate"><p class="update_chat">ERROR: ' + newMessage + '</p></div>' + messageHistory.innerHTML;
         }
         else if(receiverID===senderID){
-          messageHistory.innerHTML = '<div class="outgoing_msg rotate"><div class="sent_msg"><p>' + newMessage + '</p></div></div>' + messageHistory.innerHTML;
+          messageHistory.innerHTML = '<div class="outgoing_msg rotate"><div class="sent_msg"><p>' + newMessage + '</p></div><div></div></div>' + messageHistory.innerHTML;
         }
         else {
           messageHistory.innerHTML = '<div class="incoming_msg rotate"><div class="received_msg"><div class="received_withd_msg"><p><b>' + senderName + ':</b> ' + newMessage + '</p></div></div></div>' + messageHistory.innerHTML;
+          createEventListener(newMessageID, messageAudio);
         }
 
         messageInput.value = "";
@@ -134,16 +140,23 @@ window.onload = function(){
           }
           usernameList.innerHTML += activeChatDiv + '<div class="chat_people"><div class="chat_ib"><h5>' + user.getUsername() + '</h5><p>' + user.getLanguagename() + '</div></div></div>';
         }
+
       });
     }
     else {
       alert("Incomplete Join Information, please enter username and select all three language codes!");
     }
   }
-  messageInput.addEventListener("keyup", function(event) {
-    event.preventDefault();
+
+  addEventListener("keyup", function(event) {
     if (event.keyCode === 13) {
-      messageSend.click();
+      console.log(JSON.stringify(event));
+      if (joinBool) {
+        joinButton.click();
+      }//if login do Thi
+      else {
+        messageSend.click();
+      }
     }
   });
   messageSend.onclick = function() {
@@ -159,12 +172,15 @@ window.onload = function(){
       concatText = '';
       newText = '';
       messageInput.value = '';
+      console.log("RecordingStatus: " + recordingStatus);
+      if (recordingStatus) { stopStreaming(); }
     }
     else {
       alert("no message input");
     }
   }
   startStreamingButton.onclick = function() {
+    console.log("starting streaming button");
     if(!recordingStatus){
       startStreaming();
     }
@@ -173,8 +189,6 @@ window.onload = function(){
     }
   }
   let bufferSize = 2048,
-  	AudioContext,
-  	context,
   	processor,
   	input,
   	globalStream;
@@ -190,6 +204,10 @@ window.onload = function(){
 
   function initRecording() {
   	streamStreaming = true;
+
+    AudioContext = window.AudioContext || window.webkitAudioContext;
+    context = new AudioContext();
+
     var request = new AudioStreamRequest();
 
     request.setStart(true);
@@ -212,8 +230,6 @@ window.onload = function(){
       newText = '';
     });
 
-  	AudioContext = window.AudioContext || window.webkitAudioContext;
-  	context = new AudioContext();
   	processor = context.createScriptProcessor(bufferSize, 1, 1);
   	processor.connect(context.destination);
   	context.resume();
@@ -247,11 +263,11 @@ window.onload = function(){
   }
 
   function stopStreaming() {
+    console.log("stopping Stream");
   	streamStreaming = false;
     recordingStatus = false;
     microphoneIcon.removeAttribute("class", "icon-flash");
     microphoneIcon.style.color = "DodgerBlue";
-    //statusMessages.innerHTML = "Click on the microphone to begin...";
 
   	let track = globalStream.getTracks()[0];
   	track.stop();
@@ -270,7 +286,7 @@ window.onload = function(){
     request.setStop(true);
 
     client.stopAudioStream(request, {}, (err, response) => {
-      //protoMessages.innerHTML = response.getMessage();
+
     });
   }
   var downsampleBuffer = function (buffer, sampleRate, outSampleRate) {
@@ -299,7 +315,65 @@ window.onload = function(){
       }
       return result.buffer;
   }
+  function createEventListener (newMessageID, audioName) {
+    //const element = document.querySelector(`[data-id="${ audioName }"]`)
+    var source = null;
+    var audioBuffer = null;
+    if (context) {
+      context.close().then(function () {
+        //input = null;
+        //processor = null;
+        //context = null;
+        //AudioContext = null;
+      });
+    }
 
+    AudioContext = window.AudioContext || window.webkitAudioContext;
+    context = new AudioContext();
+
+    var playAudioRequest = new PlayAudioFileRequest();
+    playAudioRequest.setAudiofilename(audioName);
+    var playStream = client.playAudioFile(playAudioRequest, {});
+
+    var base64_mp3 = '';
+
+    playStream.on('data', (response) => {
+
+      base64_mp3 += response.getAudiodata_asB64();
+
+    });
+    playStream.on('status', function(status) {
+      console.log("stream code = " + JSON.stringify(status.code));
+      if (status.code===0){
+        playAudioBuffer(base64_mp3);
+      }
+    });
+  }
+  function playAudioBuffer(base64_mp3){
+    var audioFromString = base64ToBuffer(base64_mp3);
+
+
+    context.decodeAudioData(audioFromString, function (buffer) {
+        audioBuffer = buffer;
+        source = context.createBufferSource();
+        source.buffer = audioBuffer;
+        source.loop = false;
+        source.connect(context.destination);
+        source.start(0); // Play immediately.
+    }, function (e) {
+        console.log('Error decoding file', e);
+    });
+
+  }
+  var base64ToBuffer = function (buffer) {
+    var binary = window.atob(buffer);
+    var buffer = new ArrayBuffer(binary.length);
+    var bytes = new Uint8Array(buffer);
+    for (var i = 0; i < buffer.byteLength; i++) {
+        bytes[i] = binary.charCodeAt(i) & 0xFF;
+    }
+    return buffer;
+  };
   window.addEventListener('beforeunload', function(event) {
     if (streamStreaming) {
       stopStreaming();

@@ -13,6 +13,8 @@ service TranslateChat {
 
   rpc StopAudioStream (StopStreamRequest) returns (StopStreamResponse);
 
+  rpc PlayAudioFile (PlayAudioFileRequest) returns (stream PlayAudioFileResponse);
+
   rpc SendMessage (SendMessageRequest) returns (SendMessageResponse);
 
   rpc LeaveChat (LeaveChatRequest) returns (LeaveChatResponse);
@@ -54,8 +56,10 @@ message JoinChatResponse {
   string senderid = 2;
   string sendername = 3;
   string message = 4;
-  repeated User users = 5;
-  string messagetype = 6;
+  string messageid = 5;
+  repeated User users = 6;
+  string messagetype = 7;
+  bytes audio = 8;
 }
 
 message AudioStreamRequest {
@@ -66,6 +70,14 @@ message AudioStreamResponse {
   string transcript = 1;
   bool isfinal = 2;
   string isstatus = 3;
+}
+
+message PlayAudioFileRequest {
+  string audiofilename = 1;
+}
+
+message PlayAudioFileResponse {
+  bytes audiodata = 1;
 }
 
 message StopStreamRequest {

@@ -287,6 +287,56 @@ proto.translate_chat.TranslateChatPromiseClient.prototype.stopAudioStream =
 /**
  * @const
  * @type {!grpc.web.AbstractClientBase.MethodInfo<
+ *   !proto.translate_chat.PlayAudioFileRequest,
+ *   !proto.translate_chat.PlayAudioFileResponse>}
+ */
+const methodInfo_TranslateChat_PlayAudioFile = new grpc.web.AbstractClientBase.MethodInfo(
+  proto.translate_chat.PlayAudioFileResponse,
+  /** @param {!proto.translate_chat.PlayAudioFileRequest} request */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.translate_chat.PlayAudioFileResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.translate_chat.PlayAudioFileRequest} request The request proto
+ * @param {!Object<string, string>} metadata User defined
+ *     call metadata
+ * @return {!grpc.web.ClientReadableStream<!proto.translate_chat.PlayAudioFileResponse>}
+ *     The XHR Node Readable Stream
+ */
+proto.translate_chat.TranslateChatClient.prototype.playAudioFile =
+    function(request, metadata) {
+  return this.client_.serverStreaming(this.hostname_ +
+      '/translate_chat.TranslateChat/PlayAudioFile',
+      request,
+      metadata,
+      methodInfo_TranslateChat_PlayAudioFile);
+};
+
+
+/**
+ * @param {!proto.translate_chat.PlayAudioFileRequest} request The request proto
+ * @param {!Object<string, string>} metadata User defined
+ *     call metadata
+ * @return {!grpc.web.ClientReadableStream<!proto.translate_chat.PlayAudioFileResponse>}
+ *     The XHR Node Readable Stream
+ */
+proto.translate_chat.TranslateChatPromiseClient.prototype.playAudioFile =
+    function(request, metadata) {
+  return this.delegateClient_.client_.serverStreaming(this.delegateClient_.hostname_ +
+      '/translate_chat.TranslateChat/PlayAudioFile',
+      request,
+      metadata,
+      methodInfo_TranslateChat_PlayAudioFile);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.AbstractClientBase.MethodInfo<
  *   !proto.translate_chat.SendMessageRequest,
  *   !proto.translate_chat.SendMessageResponse>}
  */
